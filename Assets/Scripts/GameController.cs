@@ -1,20 +1,27 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
-
-
+using UnityEngine.SceneManagement;
+public enum GameState { Idle, Playing, Ended }; //parado oo jugando, un enum es una lista de opciones
+//public enum GameState { Idle, Playing,Ended }; //parado oo jugando, un enum es una lista de opciones
 public class GameController : MonoBehaviour
 {
     [Range(0f, 0.30f)] // este es un rango para la velocidad 
     public float parallaxspeed = 0.02f;
     public RawImage Background;
     public RawImage Platform;
-    public enum GameState { Idle, Playing }; //parado oo jugando, un enum es una lista de opciones
     public GameState gamestate = GameState.Idle;
     public GameObject uiIdle;
+    public GameObject uiScore;
     public GameObject player;
+    public GameObject EnemyGenerator; //Enlazo el game Object, Desde nuestro main Canvas para poder utilizarlo aca.
+    private AudioSource MusicPlayer;
+    public Text pointstext;
+    float scaleTime = 6f;
+    float scaleInc = 0.25f;
+    private int Point = 0;
     void Start()
     {
-
+        MusicPlayer = GetComponent<AudioSource>();
     }
 
     // Update is called once per frame
@@ -29,13 +36,27 @@ public class GameController : MonoBehaviour
                 //tecla flecha arriba / o el boton de el mouse posicion 0       {
                 gamestate = GameState.Playing; // el stado de el juego cambio a playing.
                 uiIdle.SetActive(false);
+                uiScore.SetActive(true);
                 player.SendMessage("updateState", "Playerrun");
-                    //llamamos a la el otro script.
+                //llamamos a la el otro script.
+                EnemyGenerator.SendMessage("StartGenerator"); //Llamamos y hacemos que empieze el generador
+                MusicPlayer.Play();
+
+
+
+                InvokeRepeating("GameTimeScale", scaleTime, scaleTime); // lo llamamos repitiendo cada 6 seg
             }
         }
         else if (gamestate == GameState.Playing)
         {
             parallax();
+        }
+        else if (gamestate == GameState.Ended)
+        {
+            if (Input.GetKeyDown("up") || Input.GetMouseButtonDown(0))
+            {
+                RestartGame();
+            }
         }
     }
     void parallax()
@@ -46,5 +67,25 @@ public class GameController : MonoBehaviour
         Background.uvRect = new Rect(Background.uvRect.x + finalspeed, 0f, 1f, 1f);
         // ahora para la plataforma 
         Platform.uvRect = new Rect(Platform.uvRect.x + finalspeed * 3, 0f, 1f, 1f);
+    }
+    public void RestartGame()
+    {
+        SceneManager.LoadScene("escena_1");
+    }
+    public void GameTimeScale() // aumentamos la velocidad de el juego
+    {
+        Time.timeScale += scaleInc;
+        Debug.Log("ritmo incrementado" + Time.timeScale.ToString());
+    }
+    public void ResetTimeScale() //para reset 
+    {
+        CancelInvoke("GameTimeScale");
+        Time.timeScale = 1f;
+        Debug.Log("Ritmo Restablecido"+ Time.timeScale.ToString());
+    }
+    public void IncreasePoints()
+    {
+        Point++;
+        pointstext.text = Point.ToString();
     }
 }
